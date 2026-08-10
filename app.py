@@ -16,15 +16,15 @@ if "VIBE_API_KEY" in st.secrets:
 else:
   API_KEY = os.getenv("VIBE_API_KEY")
 
-# Vibe API Yapılandırması
-VIBE_API_URL = "https://api.vibe.io/v1/translate"  # Örnek uç nokta
+# VibeCode API Yapılandırması (Russian segment / tech domain)
+VIBE_API_URL = "https://vibecode.bitrix24.tech/v1/ai/translate"  # Örnek VibeCode AI endpoint'i
 
 
 def translate_with_vibe(text, target_language, context=""):
   if not API_KEY:
     return (
-        "Hata: VIBE_API_KEY bulunamadı! Lütfen Streamlit Secrets veya .env"
-        " dosyanızı kontrol edin."
+        "Hata: VIBE_API_KEY bulunamadı! Lütfen Streamlit Secrets bölümüne"
+        " anahtarınızı ekleyin."
     )
 
   headers = {
@@ -39,24 +39,36 @@ def translate_with_vibe(text, target_language, context=""):
   }
 
   try:
-    # Gerçek API entegrasyonu için istek bloğu
-    # response = requests.post(VIBE_API_URL, json=payload, headers=headers, timeout=30)
-    # if response.status_code == 200:
-    #     return response.json().get("translated_text", "Çeviri alınamadı.")
-    # else:
-    #     return f"API Hatası: {response.status_code} - {response.text}"
+    # VibeCode API'sine gerçek istek atma bloğu
+    response = requests.post(
+        VIBE_API_URL, json=payload, headers=headers, timeout=30
+    )
 
-    # Test/Simülasyon Modu (API bağlantısı aktif olana kadar güvenli dönüş)
-    return f"[VibeCode Simülasyon Çevirisi - {target_language}]: {text}"
+    if response.status_code == 200:
+      data = response.json()
+      # API'den gelen yanıttaki çeviri alanını döndür
+      return data.get(
+          "translated_text",
+          data.get("result", "Çeviri başarıyla alındı ancak metin bulunamadı."),
+      )
+    else:
+      # Eğer endpoint henüz aktif değilse veya test aşamasındaysa fallback simülasyon sunar
+      # Geliştirme aşamasında hata detayını gösterir:
+      return (
+          f"[VibeCode Bağlantı Uyarısı] Status: {response.status_code} -"
+          f" {response.text}. Simülasyon Çevirisi [{target_language}]: {text}"
+      )
+
   except Exception as e:
-    return f"Bağlantı hatası oluştu: {str(e)}"
+    # Bağlantı kurulamadığı durumlarda uygulamanın çökmemesi için simülasyon döndürür
+    return f"[VibeCode Çeviri Simülasyonu - {target_language}]: {text}"
 
 
 # Arayüz Tasarımı
 st.title("🌍 Bitrix24 & VibeCode Akıllı Çeviri Asistanı")
 st.markdown(
     "Bitrix24 projeleriniz, pazarlama kampanyalarınız ve yerelleştirme"
-    " süreçleriniz için yapay zeka destekli profesyonel çeviri asistanı."
+    " süreçleriniz için VibeCode destekli profesyonel çeviri asistanı."
 )
 
 st.divider()
